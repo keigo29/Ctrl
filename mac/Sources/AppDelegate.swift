@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusText = "起動中…"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        UserDefaults.standard.register(defaults: ["highlight": true, "pasteText": true])
+        UserDefaults.standard.register(defaults: ["highlight": true, "pasteText": true, "smoothCursor": true])
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
@@ -57,6 +57,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         paste.state = UserDefaults.standard.bool(forKey: "pasteText") ? .on : .off
         menu.addItem(paste)
 
+        let smooth = NSMenuItem(title: "カーソルを滑らかに動かす（オフでラグ最小）", action: #selector(toggleSmooth), keyEquivalent: "")
+        smooth.target = self
+        smooth.state = UserDefaults.standard.bool(forKey: "smoothCursor") ? .on : .off
+        menu.addItem(smooth)
+
         menu.addItem(.separator())
         let ax = NSMenuItem(title: "アクセシビリティ設定を開く…", action: #selector(openAccessibility), keyEquivalent: "")
         ax.target = self
@@ -77,6 +82,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleHighlight() {
         let d = UserDefaults.standard
         d.set(!d.bool(forKey: "highlight"), forKey: "highlight")
+    }
+
+    @objc private func toggleSmooth() {
+        let d = UserDefaults.standard
+        d.set(!d.bool(forKey: "smoothCursor"), forKey: "smoothCursor")
     }
 
     @objc private func togglePaste() {

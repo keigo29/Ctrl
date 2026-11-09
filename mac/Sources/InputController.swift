@@ -101,6 +101,11 @@ final class InputController {
     }
 
     private func move(dx: CGFloat, dy: CGFloat) {
+        if !UserDefaults.standard.bool(forKey: "smoothCursor") {   // 滑らか処理オフ＝届いた瞬間に動かす
+            flushMove()
+            applyMove(dx: dx, dy: dy)
+            return
+        }
         pendX += dx; pendY += dy
         guard smoothTimer == nil else { return }
         let t = Timer(timeInterval: 1.0 / 120, repeats: true) { [weak self] _ in self?.smoothTick() }

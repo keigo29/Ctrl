@@ -184,6 +184,7 @@
   <label class="slider"><span>カーソル</span><input id="sens" type="range" min="0.5" max="6" step="0.1"><span id="sensV"></span></label>
   <label class="slider"><span>加速</span><input id="accel" type="range" min="0" max="3" step="0.1"><span id="accelV"></span></label>
   <label class="slider"><span>スクロール</span><input id="ssens" type="range" min="0.5" max="6" step="0.1"><span id="ssensV"></span></label>
+  <div class="slider" style="color:var(--sub);font-size:12px"><span>1回の送信</span><span id="lat" style="margin-left:auto">—</span></div>
 </details>
 
 <div id="pad" class="needs">
@@ -303,6 +304,7 @@ async function write(item) {
 }
 // カーソル移動は返事を待たずに最大 maxInflight 個まで同時に送る（待ち時間ぶんのラグを減らす）。
 // クリックや文字などは順番が大事なので、送信中のものが全部終わってから1つずつ送る。
+let latAvg = 0, latN = 0;
 let inflight = 0, maxInflight = 1;   // 3にするとbeacio経由で送信が止まることがあったので1つずつ
 function pump() {
   while (ch) {
@@ -312,7 +314,11 @@ function pump() {
     const item = queue.shift() || takeMove();
     if (!item) return;
     inflight++;
-    write(item).catch(e => {
+    const t0 = performance.now();
+    write(item).then(() => {   // 1回の送信にかかった時間（平均）を設定欄に表示
+      latAvg = latAvg ? latAvg * 0.9 + (performance.now() - t0) * 0.1 : performance.now() - t0;
+      if (++latN % 10 === 0) $('lat').textContent = latAvg.toFixed(0) + ' ms';
+    }).catch(e => {
       console.warn('write failed', e);
       if (!item.reliable && maxInflight > 1) maxInflight = 1;   // 同時送信に対応していない環境では1つずつに戻す
     }).finally(() => { if (inflight > 0) inflight--; pump(); });
