@@ -67,7 +67,14 @@ final class InputController {
 
     // MARK: - カーソル
 
-    private var location: CGPoint { CGEvent(source: nil)?.location ?? .zero }
+    // 送ったイベントがすぐ反映されるとは限らないので、直前に自分で動かした位置を覚えておく。
+    // 少し時間が空いたら（本物のマウスで動かした可能性があるので）実際の位置を読み直す。
+    private var lastPosted: CGPoint?
+    private var lastPostTime: TimeInterval = 0
+    private var location: CGPoint {
+        if let p = lastPosted, ProcessInfo.processInfo.systemUptime - lastPostTime < 0.15 { return p }
+        return CGEvent(source: nil)?.location ?? .zero
+    }
 
     private func displayBounds() -> [CGRect] {
         var count: UInt32 = 0
@@ -89,6 +96,8 @@ final class InputController {
         let e = CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: p, mouseButton: button)
         e?.setIntegerValueField(.mouseEventClickState, value: clickState)
         e?.post(tap: .cghidEventTap)
+        lastPosted = p
+        lastPostTime = ProcessInfo.processInfo.systemUptime
     }
 
     private func move(dx: CGFloat, dy: CGFloat) {
@@ -169,6 +178,7 @@ final class InputController {
     private func center() {
         let r = CGDisplayBounds(CGMainDisplayID())
         let p = CGPoint(x: r.midX, y: r.midY)
+        pendX = 0; pendY = 0
         _ = CGWarpMouseCursorPosition(p)
         postMouse(dragging ? .leftMouseDragged : .mouseMoved, p, .left)
         onCursor?(p, dragging)
