@@ -231,7 +231,7 @@ const OP = {MOVE:1, TAP:2, LONG:3, SCROLL:4, GLOBAL:5, TEXT:6, COMMIT:7, BS:8, E
 const $ = id => document.getElementById(id);
 
 // ---------- 設定 ----------
-const settings = {sens:2.2, accel:1.2, ssens:2.5};
+const settings = {sens:3.0, accel:1.5, ssens:2.5};
 try { Object.assign(settings, JSON.parse(localStorage.getItem('padremote') || '{}')); } catch (e) {}
 for (const k of Object.keys(settings)) {
   const el = $(k), v = $(k + 'V');
@@ -454,7 +454,8 @@ pad.addEventListener('touchmove', e => {
   t.dist += Math.hypot(dx, dy);
   if (t.n === 1 && t.max === 1) {
     const sp = Math.hypot(dx, dy);
-    const f = settings.sens * (1 + Math.min(sp / 10, 1.5) * settings.accel);
+    // 速く動かすほど加速（ゆっくりなら細かく、速ければ大きく）
+    const f = settings.sens * (1 + Math.min(sp / 8, 2.5) * settings.accel);
     move(dx * f, dy * f);
   } else if (t.n >= 2) {
     t.sx += dx; t.sy += dy;

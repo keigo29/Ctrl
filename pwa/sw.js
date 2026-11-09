@@ -1,4 +1,4 @@
-const CACHE = 'padremote-v9';
+const CACHE = 'padremote-v10';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-32.png'];
 
 self.addEventListener('install', e => {

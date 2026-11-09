@@ -13,8 +13,12 @@ final class InputController {
     /// カーソル位置が変わったとき（ハイライト表示用）。座標はCG座標（左上原点）
     var onCursor: ((CGPoint, Bool) -> Void)?
 
-    /// Android(px)よりMac(pt)の方が画面の点数が少ないので少し抑える
-    private let moveScale: CGFloat = 0.6
+    private let moveScale: CGFloat = 1.0
+
+    // BLEは数十ms間隔でまとめて届くので、届いた移動量を画面の更新ごと（120Hz）に少しずつ反映して滑らかにする
+    private var pendX: CGFloat = 0, pendY: CGFloat = 0
+    private var smoothTimer: Timer?
+    private let smoothRate: CGFloat = 0.35   // 1コマで残りの何割を動かすか（大きいほど追従が速い）
 
     private let source = CGEventSource(stateID: .hidSystemState)
     private var dragging = false
@@ -26,6 +30,7 @@ final class InputController {
     func handle(_ data: Data) {
         let b = [UInt8](data)
         guard let first = b.first, let op = Op(rawValue: first) else { return }
+        if op != .move { flushMove() }
         switch op {
         case .move:
             if b.count >= 5 { move(dx: CGFloat(s16(b, 1)) * moveScale, dy: CGFloat(s16(b, 3)) * moveScale) }
@@ -87,6 +92,31 @@ final class InputController {
     }
 
     private func move(dx: CGFloat, dy: CGFloat) {
+        pendX += dx; pendY += dy
+        guard smoothTimer == nil else { return }
+        let t = Timer(timeInterval: 1.0 / 120, repeats: true) { [weak self] _ in self?.smoothTick() }
+        RunLoop.main.add(t, forMode: .common)
+        smoothTimer = t
+        smoothTick()
+    }
+
+    private func smoothTick() {
+        var sx = pendX * smoothRate, sy = pendY * smoothRate
+        if abs(pendX) + abs(pendY) < 1.5 { sx = pendX; sy = pendY }   // 残りわずかなら一度に
+        pendX -= sx; pendY -= sy
+        if sx != 0 || sy != 0 { applyMove(dx: sx, dy: sy) }
+        if pendX == 0 && pendY == 0 { smoothTimer?.invalidate(); smoothTimer = nil }
+    }
+
+    /// クリックなどの前に、残っている移動を全部反映する
+    private func flushMove() {
+        smoothTimer?.invalidate(); smoothTimer = nil
+        let dx = pendX, dy = pendY
+        pendX = 0; pendY = 0
+        if dx != 0 || dy != 0 { applyMove(dx: dx, dy: dy) }
+    }
+
+    private func applyMove(dx: CGFloat, dy: CGFloat) {
         let old = location
         let p = clamp(CGPoint(x: old.x + dx, y: old.y + dy), from: old)
         postMouse(dragging ? .leftMouseDragged : .mouseMoved, p, .left)
