@@ -313,7 +313,7 @@ async function pump() {
 
 // ---------- 接続 ----------
 let step = '機器の選択', connecting = false;
-async function connect() {
+async function connect(all) {
   if (!navigator.bluetooth) {
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
     showHelp(ios
@@ -321,8 +321,12 @@ async function connect() {
       : 'このブラウザはWeb Bluetoothに対応していません。AndroidならChromeで開いてください。');
     return;
   }
+  step = '機器の選択'; device = null;
   try {
-    device = await navigator.bluetooth.requestDevice({filters: [{services: [SERVICE]}]});
+    // all=true：一覧にPadRemoteが出ないとき用。周りの機器を全部出して、接続後にPadRemoteか確かめる
+    device = await navigator.bluetooth.requestDevice(all
+      ? {acceptAllDevices: true, optionalServices: [SERVICE]}
+      : {filters: [{services: [SERVICE]}]});
     device.addEventListener('gattserverdisconnected', onDisconnected);
     retry = 0;
     connecting = true;
@@ -337,7 +341,13 @@ async function connect() {
     connecting = false;
     const msg = e && e.message ? e.message : String(e);
     setStatus('未接続：' + msg, '');
-    showHelp('接続できませんでした<br>選んだ機器：<b>' + ((device && device.name) || '名前なし') + '</b><br>止まった段階：<b>' + step + '</b><br>エラー：' + msg);
+    const allBtn = '<br><button id="connectAll" style="margin-top:8px">一覧に出ないときは：すべての機器から選ぶ</button>';
+    if (step === '機器の選択') {
+      showHelp('Macが一覧に出ないときは、下のボタンで周りの機器を全部表示して、<b>Macの名前</b>（例：〇〇のMacBook Air）を選んでください。' + allBtn);
+    } else {
+      showHelp('接続できませんでした<br>選んだ機器：<b>' + ((device && device.name) || '名前なし') + '</b><br>止まった段階：<b>' + step + '</b><br>エラー：' + msg + allBtn);
+    }
+    $('connectAll').addEventListener('click', () => connect(true));
   }
 }
 async function gattConnect() {
@@ -374,7 +384,7 @@ function onDisconnected() {
     setStatus('切断されました', '');
   }
 }
-$('connect').addEventListener('click', connect);
+$('connect').addEventListener('click', () => connect(false));
 
 // 画面を消さない
 let wakeLock = null;
