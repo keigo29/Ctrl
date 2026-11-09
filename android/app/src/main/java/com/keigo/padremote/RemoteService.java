@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Choreographer;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
@@ -62,6 +63,15 @@ public class RemoteService extends AccessibilityService implements BlePeripheral
     private boolean dragging;
     private float dragX, dragY;
     private boolean receiverRegistered;
+
+    // BLEは数十ms間隔でまとめて届くので、届いた移動量を画面の描画ごとに少しずつ反映して滑らかにする（Mac版と同じ）
+    private static final float SMOOTH_RATE = 0.6f;   // 1コマで残りの何割を動かすか
+    private float pendX, pendY;
+    private boolean frameScheduled;
+    private final Choreographer.FrameCallback smoothFrame = t -> {
+        frameScheduled = false;
+        smoothTick();
+    };
 
     private final Runnable hideCursor = () -> {
         if (cursor != null && !dragging) cursor.setVisibility(View.INVISIBLE);
@@ -182,13 +192,17 @@ public class RemoteService extends AccessibilityService implements BlePeripheral
     private void handle(byte[] d) {
         if (d.length == 0) return;
         int op = d[0] & 0xff;
+        if (op != OP_MOVE) flushMove();   // タップなどは残りの移動を反映してから
         switch (op) {
             case OP_MOVE:
                 if (d.length >= 5) {
-                    cx = clamp(cx + s16(d, 1), 0, sw - 1);
-                    cy = clamp(cy + s16(d, 3), 0, sh - 1);
-                    moveCursorView();
+                    pendX += s16(d, 1);
+                    pendY += s16(d, 3);
                     showCursor();
+                    if (!frameScheduled) {
+                        frameScheduled = true;
+                        Choreographer.getInstance().postFrameCallback(smoothFrame);
+                    }
                 }
                 break;
             case OP_TAP:
@@ -268,6 +282,34 @@ public class RemoteService extends AccessibilityService implements BlePeripheral
         lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
         cursor.setVisibility(View.INVISIBLE);
         wm.addView(cursor, lp);
+        moveCursorView();
+    }
+
+    private void smoothTick() {
+        float mx = pendX * SMOOTH_RATE, my = pendY * SMOOTH_RATE;
+        if (Math.abs(pendX) + Math.abs(pendY) < 1.5f) { mx = pendX; my = pendY; }   // 残りわずかなら一度に
+        pendX -= mx;
+        pendY -= my;
+        applyMove(mx, my);
+        if (pendX != 0 || pendY != 0) {
+            frameScheduled = true;
+            Choreographer.getInstance().postFrameCallback(smoothFrame);
+        }
+    }
+
+    private void flushMove() {
+        if (frameScheduled) {
+            Choreographer.getInstance().removeFrameCallback(smoothFrame);
+            frameScheduled = false;
+        }
+        float mx = pendX, my = pendY;
+        pendX = pendY = 0;
+        if (mx != 0 || my != 0) applyMove(mx, my);
+    }
+
+    private void applyMove(float dx, float dy) {
+        cx = clamp(cx + dx, 0, sw - 1);
+        cy = clamp(cy + dy, 0, sh - 1);
         moveCursorView();
     }
 
