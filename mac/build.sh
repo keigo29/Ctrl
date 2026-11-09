@@ -19,6 +19,8 @@ lipo -create -output "$APP/Contents/MacOS/PadRemote" build/PadRemote-arm64 build
 rm build/PadRemote-arm64 build/PadRemote-x86_64
 
 cp Info.plist "$APP/Contents/Info.plist"
+mkdir -p "$APP/Contents/Resources"
+iconutil -c icns AppIcon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
 codesign --force --sign - "$APP"   # ローカル用の署名（Apple Silicon で起動するのに必要）
 
 echo "✅ できました: mac/$APP"

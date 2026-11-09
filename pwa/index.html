@@ -10,7 +10,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PadRemote">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -311,11 +312,12 @@ async function pump() {
 }
 
 // ---------- 接続 ----------
+let step = '機器の選択', connecting = false;
 async function connect() {
   if (!navigator.bluetooth) {
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
     showHelp(ios
-      ? 'iPhoneのSafariは標準ではWeb Bluetoothに対応していません。<br>App Storeの「WebBLE（ioswebble）」を入れてSafari拡張を有効にし、Safariでこのページを開いてください。<br>（ホーム画面から開いて動かない場合はSafariのタブで使ってください）'
+      ? 'iPhoneのSafariは標準ではWeb Bluetoothに対応していません。<br>App Storeの「Bluefy」アプリでこのページを開くか、「ioswebble（beacio）」を入れてSafari拡張を有効にしてください。<br>（ホーム画面から開いて動かない場合はSafariのタブで使ってください）'
       : 'このブラウザはWeb Bluetoothに対応していません。AndroidならChromeで開いてください。');
     return;
   }
@@ -323,16 +325,30 @@ async function connect() {
     device = await navigator.bluetooth.requestDevice({filters: [{services: [SERVICE]}]});
     device.addEventListener('gattserverdisconnected', onDisconnected);
     retry = 0;
-    await gattConnect();
+    connecting = true;
+    let last;
+    for (let i = 0; i < 3; i++) {   // 初回はつながりにくいことがあるので3回まで試す
+      try { await gattConnect(); last = null; break; }
+      catch (e) { last = e; await new Promise(r => setTimeout(r, 700)); }
+    }
+    connecting = false;
+    if (last) throw last;
   } catch (e) {
-    setStatus('未接続：' + (e && e.message ? e.message : e), '');
+    connecting = false;
+    const msg = e && e.message ? e.message : String(e);
+    setStatus('未接続：' + msg, '');
+    showHelp('接続できませんでした<br>選んだ機器：<b>' + ((device && device.name) || '名前なし') + '</b><br>止まった段階：<b>' + step + '</b><br>エラー：' + msg);
   }
 }
 async function gattConnect() {
   setStatus('接続中…', 'wait');
+  step = '① Bluetooth接続';
   const server = await device.gatt.connect();
+  step = '② PadRemoteのサービスを探す';
   const svc = await server.getPrimaryService(SERVICE);
+  step = '③ 操作用の口を開く';
   ch = await svc.getCharacteristic(COMMAND);
+  step = '④ 接続先の種類を確認';
   let kind = 'android';
   try {
     const info = await svc.getCharacteristic(INFO);
@@ -349,6 +365,7 @@ async function gattConnect() {
 function onDisconnected() {
   ch = null;
   setOnline(false);
+  if (connecting) return;   // 最初の接続中は connect() 側でやり直す
   if (retry < 5) {
     retry++;
     setStatus('再接続中…(' + retry + ')', 'wait');

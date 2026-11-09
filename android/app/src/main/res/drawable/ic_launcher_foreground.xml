@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- tools/make-icons.swift と同じ図形 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- トラックパッド -->
+    <path android:fillColor="#2E2E33" android:strokeColor="#1AFFFFFF" android:strokeWidth="1"
+        android:pathData="M34,33h40a9,9 0 0 1 9,9v24a9,9 0 0 1 -9,9h-40a9,9 0 0 1 -9,-9v-24a9,9 0 0 1 9,-9z" />
+    <!-- タッチの波紋 -->
+    <path android:strokeColor="#59FF9800" android:strokeWidth="2"
+        android:pathData="M47,43m-13,0a13,13 0 1,0 26,0a13,13 0 1,0 -26,0" />
+    <path android:strokeColor="#FF9800" android:strokeWidth="2.4"
+        android:pathData="M47,43m-7,0a7,7 0 1,0 14,0a7,7 0 1,0 -14,0" />
+    <!-- カーソル -->
+    <path android:fillColor="#FFFFFF" android:strokeColor="#0B0B0C" android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:pathData="M47,43L47,67L53,61.6L57.2,70.6L61,68.9L56.8,60L64.4,60Z" />
+</vector>

@@ -35,8 +35,9 @@ final class BlePeripheral: NSObject, CBPeripheralManagerDelegate {
         let cmd = CBMutableCharacteristic(type: Self.command,
                                           properties: [.write, .writeWithoutResponse],
                                           value: nil, permissions: [.writeable])
+        // value を nil にして読み取りを自前で返す（スマホが接続したことを状態表示に出すため）
         let info = CBMutableCharacteristic(type: Self.info, properties: [.read],
-                                           value: "mac".data(using: .utf8), permissions: [.readable])
+                                           value: nil, permissions: [.readable])
         let svc = CBMutableService(type: Self.service, primary: true)
         svc.characteristics = [cmd, info]
         manager.add(svc)
@@ -47,7 +48,7 @@ final class BlePeripheral: NSObject, CBPeripheralManagerDelegate {
             onState("サービス登録に失敗：\(error.localizedDescription)")
             return
         }
-        let name = Host.current().localizedName ?? "Mac"
+        let name = "PadRemote"   // スマホの一覧で見分けやすい名前
         peripheral.startAdvertising([
             CBAdvertisementDataServiceUUIDsKey: [Self.service],
             CBAdvertisementDataLocalNameKey: name,
@@ -60,6 +61,21 @@ final class BlePeripheral: NSObject, CBPeripheralManagerDelegate {
         } else {
             onState("待機中（スマホから接続できます）")
         }
+    }
+
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        guard request.characteristic.uuid == Self.info else {
+            peripheral.respond(to: request, withResult: .attributeNotFound)
+            return
+        }
+        let value = Data("mac".utf8)
+        guard request.offset <= value.count else {
+            peripheral.respond(to: request, withResult: .invalidOffset)
+            return
+        }
+        request.value = value.subdata(in: request.offset..<value.count)
+        peripheral.respond(to: request, withResult: .success)
+        onState("スマホと接続しました")
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
