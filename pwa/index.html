@@ -325,6 +325,11 @@ let step = '機器の選択', connecting = false;
 async function connect(all) {
   if (!navigator.bluetooth) {
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const homeApp = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    if (ios && homeApp) {
+      showHelp('ホーム画面から開くとSafariの拡張機能（beacio）が使えません。<br>Safariでこのページを開き、共有 →「ホーム画面に追加」で<b>「Webアプリとして開く」をオフ</b>にして追加し直してください。<br>（見当たらない場合はSafariのお気に入りから開いてください）');
+      return;
+    }
     showHelp(ios
       ? 'iPhoneのSafariは標準ではWeb Bluetoothに対応していません。<br>App Storeの「Bluefy」アプリでこのページを開くか、「ioswebble（beacio）」を入れてSafari拡張を有効にしてください。<br>（ホーム画面から開いて動かない場合はSafariのタブで使ってください）'
       : 'このブラウザはWeb Bluetoothに対応していません。AndroidならChromeで開いてください。');
@@ -539,7 +544,7 @@ $('enter').addEventListener('click', () => { send([OP.ENTER]); buzz(); });
 
 // ---------- PWA ----------
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-if (!navigator.bluetooth) setStatus('このブラウザは未対応', '');
+if (!navigator.bluetooth) setStatus((navigator.standalone || matchMedia('(display-mode: standalone)').matches) && /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ホーム画面版では使えません（「接続」で説明）' : 'このブラウザは未対応', '');
 </script>
 </body>
 </html>
