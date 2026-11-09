@@ -7,7 +7,7 @@ final class InputController {
     private enum Op: UInt8 {
         case move = 0x01, tap = 0x02, longPress = 0x03, scroll = 0x04, global = 0x05
         case textChunk = 0x06, textCommit = 0x07, backspace = 0x08, enter = 0x09
-        case dragStart = 0x0A, dragEnd = 0x0B, center = 0x0C
+        case dragStart = 0x0A, dragEnd = 0x0B, center = 0x0C, launch = 0x0D
     }
 
     /// カーソル位置が変わったとき（ハイライト表示用）。座標はCG座標（左上原点）
@@ -58,6 +58,10 @@ final class InputController {
             dragEnd()
         case .center:
             center()
+        case .launch:
+            let s = String(decoding: textBuf, as: UTF8.self)
+            textBuf.removeAll()
+            if !s.isEmpty { launch(s) }
         }
     }
 
@@ -228,6 +232,23 @@ final class InputController {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/System/Applications/Mission Control.app/Contents/MacOS/Mission Control")
         p.arguments = args
+        try? p.run()
+    }
+
+    // MARK: - ランチャー
+
+    /// "url:https://…" → 既定のブラウザで開く / "app:Safari" → アプリを起動（名前 or バンドルID）
+    private func launch(_ target: String) {
+        if target.hasPrefix("url:") {
+            if let url = URL(string: String(target.dropFirst(4))) { NSWorkspace.shared.open(url) }
+            return
+        }
+        let name = (target.hasPrefix("app:") ? String(target.dropFirst(4)) : target)
+            .trimmingCharacters(in: .whitespaces)
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        let looksLikeBundleID = name.contains(".") && !name.contains(" ") && !name.hasPrefix("/")
+        p.arguments = looksLikeBundleID ? ["-b", name] : ["-a", name]
         try? p.run()
     }
 

@@ -143,6 +143,46 @@
   #pad.dragging{border:1.5px dashed #f2f2f3}
   button.c{border-radius:18px}
   button.key{min-height:62px}
+  /* 表示切替（トラックパッド / ランチャー） */
+  .seg{display:flex;gap:4px;padding:4px;margin-top:10px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+  .seg button{flex:1;border:0;background:transparent;box-shadow:none;padding:8px 6px;font-size:13px;color:var(--sub)}
+  .seg button.sel{background:linear-gradient(#ffffff,#d9d9de);color:#0b0b0c;font-weight:700}
+  .seg button svg.lucide{width:16px;height:16px}
+
+  /* ランチャー */
+  #deck{flex:1;min-height:150px;margin-top:10px;overflow-y:auto;display:none;flex-direction:column}
+  body.view-deck #deck{display:flex}
+  body.view-deck #pad{display:none}
+  .deck-head{display:flex;align-items:center;margin:2px 4px 8px;font-size:12px;font-weight:700;color:var(--sub);gap:6px}
+  .deck-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-bottom:4px}
+  .tile{flex-direction:column;gap:6px;border-radius:20px;min-height:92px;padding:10px 6px;font-size:13px}
+  .tile svg.lucide{width:30px;height:30px}
+  .tile .ini{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:17px;background:rgba(255,255,255,.12)}
+  .tile span.nm{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tile.add{border:1.5px dashed #3a3a40;background:transparent;color:var(--sub);box-shadow:none}
+  body.deck-edit .tile:not(.add){outline:2px dashed rgba(255,255,255,.55);outline-offset:-5px}
+
+  /* 編集ダイアログ */
+  dialog{border:1px solid var(--line);border-radius:22px;background:#141416;color:var(--text);padding:18px;
+    width:min(92vw,420px);max-height:88dvh;overflow-y:auto}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  dialog h2{font-size:17px;margin:0 0 12px}
+  dialog .f{display:flex;flex-direction:column;gap:6px;margin:10px 0;font-size:12px;font-weight:700;color:var(--sub)}
+  dialog input[type=text]{font:inherit;font-size:16px;color:var(--text);background:#0e0e10;border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px;-webkit-user-select:text;user-select:text}
+  dialog .note{font-size:11.5px;font-weight:400;color:var(--dim);line-height:1.5}
+  dialog .seg{margin-top:0}
+  .icons{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+  .icons button{padding:7px 0;border-radius:10px}
+  .icons button svg.lucide{width:18px;height:18px}
+  .icons button.sel,.swatches button.sel{outline:2px solid #fff;outline-offset:1px}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .swatches button{width:34px;height:34px;padding:0;border-radius:50%}
+  .actions{display:flex;gap:8px;margin-top:16px;align-items:center}
+  .actions .danger{color:#fca5a5;border-color:#5b2b2b}
+  .order{display:flex;gap:8px}
+  .order button{flex:1;padding:8px}
 </style>
 </head>
 <body class="offline">
@@ -187,6 +227,8 @@
   <div class="slider" style="color:var(--sub);font-size:12px"><span>1回の送信</span><span id="lat" style="margin-left:auto">—</span></div>
 </details>
 
+<div class="seg" id="viewSeg"><button type="button" data-view="pad"><svg aria-hidden="true" class="lucide lucide-mouse-pointer-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z" /></svg>トラックパッド</button><button type="button" data-view="deck"><svg aria-hidden="true" class="lucide lucide-layout-grid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>ランチャー</button></div>
+
 <div id="pad" class="needs">
   <div class="pad-mark"><svg aria-hidden="true" class="lucide lucide-mouse-pointer-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z" /></svg></div>
   <div class="strip"><svg aria-hidden="true" class="lucide lucide-chevrons-up-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" /></svg><span>スクロール</span><svg aria-hidden="true" class="lucide lucide-chevrons-up-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" /></svg></div>
@@ -197,6 +239,30 @@
     <div><svg aria-hidden="true" class="lucide lucide-arrow-down-up" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m3 16 4 4 4-4" /><path d="M7 20V4" /><path d="m21 8-4-4-4 4" /><path d="M17 4v16" /></svg><span><b>2本指</b> スクロール</span></div>
   </div>
 </div>
+
+<div id="deck" class="needs">
+  <div class="deck-head"><span id="deckTitle">ランチャー</span><button id="deckEdit" class="chip" type="button"><svg aria-hidden="true" class="lucide lucide-pencil" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></svg>編集</button></div>
+  <div class="deck-grid" id="deckGrid"></div>
+</div>
+
+<dialog id="editor">
+  <h2 id="edTitle">ボタンを追加</h2>
+  <label class="f">名前<input type="text" id="edName" maxlength="14" placeholder="例：YouTube"></label>
+  <div class="f">種類
+    <div class="seg" id="edType"><button type="button" data-v="app">アプリ</button><button type="button" data-v="url">サイト</button></div>
+  </div>
+  <label class="f"><span id="edValueLabel">アプリ名</span><input type="text" id="edValue" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <span class="note" id="edNote"></span></label>
+  <div class="f">アイコン<div class="icons" id="edIcons"></div></div>
+  <div class="f">色<div class="swatches" id="edColors"></div></div>
+  <div class="f" id="edOrderWrap">並び順<div class="order"><button type="button" id="edLeft">← 前へ</button><button type="button" id="edRight">後ろへ →</button></div></div>
+  <div class="actions">
+    <button type="button" id="edDelete" class="danger">削除</button>
+    <span style="flex:1"></span>
+    <button type="button" id="edCancel">キャンセル</button>
+    <button type="button" id="edSave" class="primary">保存</button>
+  </div>
+</dialog>
 
 <div id="toast"></div>
 
@@ -223,11 +289,12 @@ function applyTarget(t) {
   document.getElementById('longGuide').innerHTML =
     target === 'mac' ? '<b>長押し</b> 右クリック' : '<b>長押し・2本指タップ</b>';
   document.getElementById('opsLabel').textContent = target === 'mac' ? 'Mac操作' : 'タブレット操作';
+  if (typeof renderDeck === 'function') renderDeck();
 }
 // スクロールを送る間隔（Macは本物のスクロールなので細かく送ると滑らか）
 const scrollMs = () => target === 'mac' ? 35 : 220;
 const stripMs = () => target === 'mac' ? 35 : 150;
-const OP = {MOVE:1, TAP:2, LONG:3, SCROLL:4, GLOBAL:5, TEXT:6, COMMIT:7, BS:8, ENTER:9, DRAG_START:10, DRAG_END:11, CENTER:12};
+const OP = {MOVE:1, TAP:2, LONG:3, SCROLL:4, GLOBAL:5, TEXT:6, COMMIT:7, BS:8, ENTER:9, DRAG_START:10, DRAG_END:11, CENTER:12, LAUNCH:13};
 
 const $ = id => document.getElementById(id);
 
@@ -519,17 +586,21 @@ $('drag').addEventListener('click', () => {
 $('center').addEventListener('click', () => { send([OP.CENTER]); buzz(); });
 
 // ---------- 文字入力 ----------
-function sendText() {
-  const ta = $('txt'), text = ta.value;
-  if (!ch) { needConn(); return; }
-  if (!text) { ta.focus(); return; }
-  const bytes = new TextEncoder().encode(text);
+// 文字列を19バイトずつ分けて送り、最後に endOp（確定 or 起動）を送る
+function sendString(str, endOp) {
+  const bytes = new TextEncoder().encode(str);
   for (let i = 0; i < bytes.length; i += 19) {
     const part = bytes.subarray(i, i + 19), pk = new Uint8Array(part.length + 1);
     pk[0] = OP.TEXT; pk.set(part, 1);
     send(pk);
   }
-  send([OP.COMMIT]);
+  send([endOp]);
+}
+function sendText() {
+  const ta = $('txt'), text = ta.value;
+  if (!ch) { needConn(); return; }
+  if (!text) { ta.focus(); return; }
+  sendString(text, OP.COMMIT);
   if (autoEnter) send([OP.ENTER]);
   ta.value = '';
   buzz();
@@ -547,6 +618,151 @@ $('txt').addEventListener('keydown', e => {
 });
 $('bs').addEventListener('click', () => { send([OP.BS]); buzz(); });
 $('enter').addEventListener('click', () => { send([OP.ENTER]); buzz(); });
+
+
+// ---------- 表示切替 ----------
+function setView(v) {
+  document.body.classList.toggle('view-deck', v === 'deck');
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('sel', b.dataset.view === v));
+  try { localStorage.setItem('padremote.view', v); } catch (e) {}
+}
+document.querySelectorAll('#viewSeg button').forEach(b => b.addEventListener('click', () => { setView(b.dataset.view); buzz(); }));
+let initialView = 'pad';
+try { initialView = localStorage.getItem('padremote.view') || 'pad'; } catch (e) {}
+setView(initialView);
+
+// ---------- ランチャー ----------
+const DECK_ICONS = {"play": "<svg aria-hidden=\"true\" class=\"lucide lucide-play\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\" /></svg>", "music": "<svg aria-hidden=\"true\" class=\"lucide lucide-music\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M21 16V3a1 1 0 0 0-1.28-.96l-10 2.917a1 1 0 0 0-.72.96V19\" /><circle cx=\"18\" cy=\"16\" r=\"3\" /><circle cx=\"6\" cy=\"19\" r=\"3\" /></svg>", "tv": "<svg aria-hidden=\"true\" class=\"lucide lucide-tv\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m17 2-5 5-5-5\" /><rect width=\"20\" height=\"15\" x=\"2\" y=\"7\" rx=\"2\" /></svg>", "headphones": "<svg aria-hidden=\"true\" class=\"lucide lucide-headphones\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3\" /></svg>", "map": "<svg aria-hidden=\"true\" class=\"lucide lucide-map\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\" /><path d=\"M15 5.764v15\" /><path d=\"M9 3.236v15\" /></svg>", "navigation": "<svg aria-hidden=\"true\" class=\"lucide lucide-navigation\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><polygon points=\"3 11 22 2 13 21 11 13 3 11\" /></svg>", "car": "<svg aria-hidden=\"true\" class=\"lucide lucide-car\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2\" /><circle cx=\"7\" cy=\"17\" r=\"2\" /><path d=\"M9 17h6\" /><circle cx=\"17\" cy=\"17\" r=\"2\" /></svg>", "globe": "<svg aria-hidden=\"true\" class=\"lucide lucide-globe\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /><path d=\"M2 12h20\" /></svg>", "compass": "<svg aria-hidden=\"true\" class=\"lucide lucide-compass\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\" /></svg>", "search": "<svg aria-hidden=\"true\" class=\"lucide lucide-search\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg>", "mail": "<svg aria-hidden=\"true\" class=\"lucide lucide-mail\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7\" /><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\" /></svg>", "message-circle": "<svg aria-hidden=\"true\" class=\"lucide lucide-message-circle\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\" /></svg>", "phone": "<svg aria-hidden=\"true\" class=\"lucide lucide-phone\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384\" /></svg>", "calendar": "<svg aria-hidden=\"true\" class=\"lucide lucide-calendar\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M8 2v3\" /><path d=\"M16 2v3\" /><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" /><path d=\"M3 9h18\" /></svg>", "camera": "<svg aria-hidden=\"true\" class=\"lucide lucide-camera\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z\" /><circle cx=\"12\" cy=\"13\" r=\"3\" /></svg>", "image": "<svg aria-hidden=\"true\" class=\"lucide lucide-image\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /><circle cx=\"9\" cy=\"9\" r=\"2\" /><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" /></svg>", "video": "<svg aria-hidden=\"true\" class=\"lucide lucide-video\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\" /><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\" /></svg>", "gamepad-2": "<svg aria-hidden=\"true\" class=\"lucide lucide-gamepad-2\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><line x1=\"6\" x2=\"10\" y1=\"11\" y2=\"11\" /><line x1=\"8\" x2=\"8\" y1=\"9\" y2=\"13\" /><line x1=\"15\" x2=\"15.01\" y1=\"12\" y2=\"12\" /><line x1=\"18\" x2=\"18.01\" y1=\"10\" y2=\"10\" /><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z\" /></svg>", "shopping-cart": "<svg aria-hidden=\"true\" class=\"lucide lucide-shopping-cart\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18\" /><path d=\"M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25\" /><circle cx=\"18\" cy=\"20\" r=\"2\" /><circle cx=\"8\" cy=\"20\" r=\"2\" /></svg>", "book-open": "<svg aria-hidden=\"true\" class=\"lucide lucide-book-open\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 5v16\" /><path d=\"M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z\" /></svg>", "file-text": "<svg aria-hidden=\"true\" class=\"lucide lucide-file-text\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\" /><path d=\"M14 2v5a1 1 0 0 0 1 1h5\" /><path d=\"M10 9H8\" /><path d=\"M16 13H8\" /><path d=\"M16 17H8\" /></svg>", "folder": "<svg aria-hidden=\"true\" class=\"lucide lucide-folder\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\" /></svg>", "code": "<svg aria-hidden=\"true\" class=\"lucide lucide-code\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m16 18 6-6-6-6\" /><path d=\"m8 6-6 6 6 6\" /></svg>", "terminal": "<svg aria-hidden=\"true\" class=\"lucide lucide-terminal\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 19h8\" /><path d=\"m4 17 6-6-6-6\" /></svg>", "cloud": "<svg aria-hidden=\"true\" class=\"lucide lucide-cloud\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z\" /></svg>", "coffee": "<svg aria-hidden=\"true\" class=\"lucide lucide-coffee\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M10 2v2\" /><path d=\"M14 2v2\" /><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\" /><path d=\"M6 2v2\" /></svg>", "heart": "<svg aria-hidden=\"true\" class=\"lucide lucide-heart\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\" /></svg>", "star": "<svg aria-hidden=\"true\" class=\"lucide lucide-star\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" /></svg>", "zap": "<svg aria-hidden=\"true\" class=\"lucide lucide-zap\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z\" /></svg>", "rocket": "<svg aria-hidden=\"true\" class=\"lucide lucide-rocket\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\" /><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09\" /><path d=\"M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z\" /><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05\" /></svg>", "settings": "<svg aria-hidden=\"true\" class=\"lucide lucide-settings\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" /><circle cx=\"12\" cy=\"12\" r=\"3\" /></svg>", "layout-grid": "<svg aria-hidden=\"true\" class=\"lucide lucide-layout-grid\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\" /><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\" /><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\" /><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\" /></svg>", "__plus": "<svg aria-hidden=\"true\" class=\"lucide lucide-plus\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M5 12h14\" /><path d=\"M12 5v14\" /></svg>"};
+const HUES = [null, 262, 215, 158, 75, 15, 300];
+const DEFAULT_DECK = {
+  android: [
+    {name:'YouTube', type:'app', value:'YouTube', icon:'play', h:15},
+    {name:'マップ', type:'app', value:'マップ', icon:'map', h:158},
+    {name:'Chrome', type:'app', value:'Chrome', icon:'globe', h:262},
+    {name:'設定', type:'app', value:'設定', icon:'settings', h:null},
+  ],
+  mac: [
+    {name:'Safari', type:'app', value:'Safari', icon:'compass', h:215},
+    {name:'Finder', type:'app', value:'Finder', icon:'folder', h:262},
+    {name:'YouTube', type:'url', value:'https://www.youtube.com', icon:'play', h:15},
+    {name:'ターミナル', type:'app', value:'Terminal', icon:'terminal', h:null},
+  ],
+};
+const deckKey = () => 'padremote.deck.' + target;
+function loadDeck() {
+  try { const v = JSON.parse(localStorage.getItem(deckKey())); if (Array.isArray(v)) return v; } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DECK[target]));
+}
+function saveDeck(d) { try { localStorage.setItem(deckKey(), JSON.stringify(d)); } catch (e) {} }
+let deck = [], deckEdit = false;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function tileInner(item) {
+  const ic = DECK_ICONS[item.icon] || `<span class="ini">${esc((item.name || '?').slice(0, 1))}</span>`;
+  return ic + `<span class="nm">${esc(item.name || '')}</span>`;
+}
+function renderDeck() {
+  deck = loadDeck();
+  $('deckTitle').textContent = (target === 'mac' ? 'Mac' : 'Redmi Pad') + 'のランチャー';
+  const g = $('deckGrid'); g.innerHTML = '';
+  deck.forEach((item, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tile' + (item.h != null ? ' c' : '');
+    if (item.h != null) b.style.setProperty('--h', item.h);
+    b.innerHTML = tileInner(item);
+    b.addEventListener('click', () => deckEdit ? openEditor(i) : launchItem(item));
+    g.appendChild(b);
+  });
+  const add = document.createElement('button');
+  add.type = 'button'; add.className = 'tile add';
+  add.innerHTML = DECK_ICONS['__plus'] + '<span class="nm">追加</span>';
+  add.addEventListener('click', () => openEditor(-1));
+  g.appendChild(add);
+}
+function launchItem(item) {
+  let v = (item.value || '').trim();
+  if (!v) return;
+  if (item.type === 'url' && !/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+  sendString((item.type === 'url' ? 'url:' : 'app:') + v, OP.LAUNCH);
+  buzz(20);
+  if (ch) toast(item.name + ' を起動');
+}
+$('deckEdit').addEventListener('click', () => {
+  deckEdit = !deckEdit;
+  document.body.classList.toggle('deck-edit', deckEdit);
+  $('deckEdit').classList.toggle('on', deckEdit);
+  buzz();
+});
+
+// 編集ダイアログ
+let edIndex = -1, edState = null;
+function edRenderType() {
+  document.querySelectorAll('#edType button').forEach(b => b.classList.toggle('sel', b.dataset.v === edState.type));
+  const app = edState.type === 'app';
+  $('edValueLabel').textContent = app ? 'アプリ名' : 'URL';
+  $('edValue').placeholder = app ? (target === 'mac' ? '例：Safari' : '例：YouTube') : '例：https://www.youtube.com';
+  $('edValue').inputMode = app ? 'text' : 'url';
+  $('edNote').textContent = app
+    ? (target === 'mac'
+        ? 'アプリの英語名（Safari、Notes、Terminal など）。バンドルID（com.apple.Safari）でもOK'
+        : 'ホーム画面に出ている名前（YouTube、マップ など）。パッケージ名（com.google.android.youtube）でもOK')
+    : (target === 'mac' ? 'Macの既定のブラウザで開きます' : 'タブレットのブラウザ（対応アプリがあればアプリ）で開きます');
+}
+function edRenderPickers() {
+  const icons = $('edIcons'); icons.innerHTML = '';
+  Object.keys(DECK_ICONS).filter(k => k !== '__plus').forEach(k => {
+    const b = document.createElement('button'); b.type = 'button'; b.innerHTML = DECK_ICONS[k];
+    b.classList.toggle('sel', edState.icon === k);
+    b.addEventListener('click', () => { edState.icon = k; edRenderPickers(); });
+    icons.appendChild(b);
+  });
+  const ini = document.createElement('button'); ini.type = 'button'; ini.textContent = 'あ';
+  ini.title = '頭文字'; ini.classList.toggle('sel', !edState.icon);
+  ini.addEventListener('click', () => { edState.icon = ''; edRenderPickers(); });
+  icons.appendChild(ini);
+  const sw = $('edColors'); sw.innerHTML = '';
+  HUES.forEach(h => {
+    const b = document.createElement('button'); b.type = 'button';
+    if (h == null) { b.style.background = 'linear-gradient(#26262a,#18181b)'; }
+    else { b.className = 'c'; b.style.setProperty('--h', h); }
+    b.classList.toggle('sel', edState.h === h);
+    b.addEventListener('click', () => { edState.h = h; edRenderPickers(); });
+    sw.appendChild(b);
+  });
+}
+function openEditor(i) {
+  edIndex = i;
+  edState = i >= 0 ? {...deck[i]} : {name:'', type:'app', value:'', icon:'star', h:262};
+  $('edTitle').textContent = i >= 0 ? 'ボタンを編集' : 'ボタンを追加';
+  $('edName').value = edState.name; $('edValue').value = edState.value;
+  $('edDelete').style.display = i >= 0 ? '' : 'none';
+  $('edOrderWrap').style.display = i >= 0 ? '' : 'none';
+  edRenderType(); edRenderPickers();
+  $('editor').showModal();
+}
+document.querySelectorAll('#edType button').forEach(b => b.addEventListener('click', () => { edState.type = b.dataset.v; edRenderType(); }));
+$('edCancel').addEventListener('click', () => $('editor').close());
+$('edSave').addEventListener('click', () => {
+  edState.name = $('edName').value.trim(); edState.value = $('edValue').value.trim();
+  if (!edState.value) { $('edValue').focus(); return; }
+  if (!edState.name) edState.name = edState.type === 'url' ? edState.value.replace(/^https?:\/\/(www\.)?/, '').split('/')[0] : edState.value;
+  if (edIndex >= 0) deck[edIndex] = edState; else deck.push(edState);
+  saveDeck(deck); renderDeck(); $('editor').close(); buzz();
+});
+$('edDelete').addEventListener('click', () => {
+  if (edIndex < 0) return;
+  deck.splice(edIndex, 1); saveDeck(deck); renderDeck(); $('editor').close(); buzz();
+});
+function moveItem(dir) {
+  const j = edIndex + dir;
+  if (edIndex < 0 || j < 0 || j >= deck.length) return;
+  [deck[edIndex], deck[j]] = [deck[j], deck[edIndex]];
+  edIndex = j; saveDeck(deck); renderDeck(); buzz();
+}
+$('edLeft').addEventListener('click', () => moveItem(-1));
+$('edRight').addEventListener('click', () => moveItem(1));
+renderDeck();
 
 // ---------- PWA ----------
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

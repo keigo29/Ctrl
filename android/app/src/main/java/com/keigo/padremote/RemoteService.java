@@ -5,14 +5,17 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,6 +30,8 @@ import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * ユーザー補助サービス本体。
@@ -47,6 +52,7 @@ public class RemoteService extends AccessibilityService implements BlePeripheral
     static final int OP_DRAG_START = 0x0A;
     static final int OP_DRAG_END = 0x0B;
     static final int OP_CENTER = 0x0C;
+    static final int OP_LAUNCH = 0x0D;     // 0x06で送った文字列を "app:名前" / "url:URL" として起動
 
     static volatile RemoteService instance;
     static volatile String status = "停止中";
@@ -240,6 +246,12 @@ public class RemoteService extends AccessibilityService implements BlePeripheral
             case OP_DRAG_END:
                 dragEnd();
                 break;
+            case OP_LAUNCH: {
+                String t = new String(textBuf.toByteArray(), StandardCharsets.UTF_8);
+                textBuf.reset();
+                if (!t.isEmpty()) launch(t);
+                break;
+            }
             case OP_CENTER:
                 cx = sw / 2f;
                 cy = sh / 2f;
@@ -449,6 +461,53 @@ public class RemoteService extends AccessibilityService implements BlePeripheral
         boolean ok = node.performAction(
                 AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
         if (!ok && node.isMultiLine()) insertText("\n");
+    }
+
+    // ================= ランチャー =================
+
+    private void launch(String target) {
+        try {
+            Intent intent;
+            if (target.startsWith("url:")) {
+                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(target.substring(4)));
+            } else {
+                String name = target.startsWith("app:") ? target.substring(4) : target;
+                intent = findApp(name.trim());
+                if (intent == null) {
+                    toast("アプリが見つかりません：" + name);
+                    return;
+                }
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+            startActivity(intent);
+        } catch (Exception e) {
+            toast("起動できませんでした：" + e.getMessage());
+        }
+    }
+
+    /** パッケージ名（com.example.app）でも、ホーム画面の表示名（YouTube・マップ など）でも探す */
+    private Intent findApp(String name) {
+        PackageManager pm = getPackageManager();
+        if (name.contains(".") && !name.contains(" ")) {
+            Intent byPkg = pm.getLaunchIntentForPackage(name);
+            if (byPkg != null) return byPkg;
+        }
+        Intent main = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+        List<ResolveInfo> apps = pm.queryIntentActivities(main, 0);
+        ResolveInfo partial = null;
+        String key = name.toLowerCase(Locale.ROOT);
+        for (ResolveInfo ri : apps) {
+            String label = String.valueOf(ri.loadLabel(pm)).toLowerCase(Locale.ROOT);
+            if (label.equals(key)) return componentIntent(ri);
+            if (partial == null && label.contains(key)) partial = ri;
+        }
+        return partial == null ? null : componentIntent(partial);
+    }
+
+    private static Intent componentIntent(ResolveInfo ri) {
+        Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+        i.setComponent(new ComponentName(ri.activityInfo.packageName, ri.activityInfo.name));
+        return i;
     }
 
     private void toast(String msg) {
