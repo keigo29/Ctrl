@@ -303,7 +303,7 @@ async function write(item) {
 }
 // カーソル移動は返事を待たずに最大 maxInflight 個まで同時に送る（待ち時間ぶんのラグを減らす）。
 // クリックや文字などは順番が大事なので、送信中のものが全部終わってから1つずつ送る。
-let inflight = 0, maxInflight = 3;
+let inflight = 0, maxInflight = 1;   // 3にするとbeacio経由で送信が止まることがあったので1つずつ
 function pump() {
   while (ch) {
     if (queue.length) {
