@@ -301,14 +301,23 @@ async function write(item) {
   if (ch.writeValueWithResponse) return ch.writeValueWithResponse(item.data);
   return ch.writeValue(item.data);
 }
-async function pump() {
-  if (busy || !ch) return;
-  const item = queue.shift() || takeMove();
-  if (!item) return;
-  busy = true;
-  try { await write(item); } catch (e) { console.warn('write failed', e); }
-  busy = false;
-  pump();
+// カーソル移動は返事を待たずに最大 maxInflight 個まで同時に送る（待ち時間ぶんのラグを減らす）。
+// クリックや文字などは順番が大事なので、送信中のものが全部終わってから1つずつ送る。
+let inflight = 0, maxInflight = 3;
+function pump() {
+  while (ch) {
+    if (queue.length) {
+      if (inflight > 0) return;          // 確実に届けたいものは前の送信が終わってから
+    } else if (inflight >= maxInflight) return;
+    const item = queue.shift() || takeMove();
+    if (!item) return;
+    inflight++;
+    write(item).catch(e => {
+      console.warn('write failed', e);
+      if (!item.reliable && maxInflight > 1) maxInflight = 1;   // 同時送信に対応していない環境では1つずつに戻す
+    }).finally(() => { if (inflight > 0) inflight--; pump(); });
+    if (item.reliable) return;
+  }
 }
 
 // ---------- 接続 ----------
@@ -365,7 +374,7 @@ async function gattConnect() {
     kind = new TextDecoder().decode(await info.readValue()).trim();
   } catch (e) { /* 古い受信アプリは android 扱い */ }
   applyTarget(kind);
-  queue = []; busy = false; mvx = mvy = 0; retry = 0;
+  queue = []; busy = false; inflight = 0; mvx = mvy = 0; retry = 0;
   setStatus((device.name || '接続済み') + (target === 'mac' ? '（Mac）' : ''), 'ok');
   $('connectLabel').textContent = '再接続';
   setOnline(true); buzz(20);

@@ -18,7 +18,7 @@ final class InputController {
     // BLEは数十ms間隔でまとめて届くので、届いた移動量を画面の更新ごと（120Hz）に少しずつ反映して滑らかにする
     private var pendX: CGFloat = 0, pendY: CGFloat = 0
     private var smoothTimer: Timer?
-    private let smoothRate: CGFloat = 0.35   // 1コマで残りの何割を動かすか（大きいほど追従が速い）
+    private let smoothRate: CGFloat = 0.6    // 1コマで残りの何割を動かすか（大きいほど追従が速く、ラグが少ない）
 
     private let source = CGEventSource(stateID: .hidSystemState)
     private var dragging = false

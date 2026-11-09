@@ -12,6 +12,13 @@ final class BlePeripheral: NSObject, CBPeripheralManagerDelegate {
     private let onPacket: (Data) -> Void
     private let onState: (String) -> Void
     private var idleTimer: Timer?
+    private var lowLatencyCentrals = Set<UUID>()
+
+    /// 接続してきたスマホに「通信間隔を最短に」と頼む（カーソルのラグが減る）
+    private func requestLowLatency(_ central: CBCentral) {
+        guard lowLatencyCentrals.insert(central.identifier).inserted else { return }
+        manager.setDesiredConnectionLatency(.low, for: central)
+    }
 
     init(onPacket: @escaping (Data) -> Void, onState: @escaping (String) -> Void) {
         self.onPacket = onPacket
@@ -73,12 +80,14 @@ final class BlePeripheral: NSObject, CBPeripheralManagerDelegate {
             peripheral.respond(to: request, withResult: .invalidOffset)
             return
         }
+        requestLowLatency(request.central)
         request.value = value.subdata(in: request.offset..<value.count)
         peripheral.respond(to: request, withResult: .success)
         onState("スマホと接続しました")
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        if let first = requests.first { requestLowLatency(first.central) }
         for r in requests where r.characteristic.uuid == Self.command {
             if let v = r.value { onPacket(v) }
         }
