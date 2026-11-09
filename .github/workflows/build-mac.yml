@@ -1,0 +1,25 @@
+name: Build Mac app
+
+on:
+  push:
+    paths:
+      - 'mac/**'
+      - '.github/workflows/build-mac.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build PadRemote.app
+        run: bash mac/build.sh
+
+      - name: Zip
+        run: ditto -c -k --keepParent mac/build/PadRemote.app PadRemote-mac.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PadRemote-mac
+          path: PadRemote-mac.zip

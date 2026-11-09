@@ -1,0 +1,508 @@
+<!-- icons: Lucide (ISC License) https://lucide.dev -->
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0b0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PadRemote">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<title>PadRemote</title>
+<style>
+  :root{
+    --bg:#0b0b0c; --panel:#141416; --line:#2a2a2e; --text:#f2f2f3; --sub:#8b8b92; --dim:#55555c;
+    --ok:#4ade80; --ng:#f87171; --wait:#fbbf24; --drag:#ff9800;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+    font-family:"Zen Kaku Gothic New",-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+    overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+  body{display:flex;flex-direction:column;height:100dvh;
+    padding:calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 10px)}
+  svg.lucide{width:22px;height:22px;flex:none}
+
+  /* ヘッダー */
+  header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  h1{font-size:18px;white-space:nowrap;margin:0;font-weight:700;letter-spacing:.02em}
+  .status{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--sub);
+    flex:1;min-width:0;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+  .status span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ng);flex:none}
+  .dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)} .dot.wait{background:var(--wait)}
+
+  /* ボタン共通 */
+  button{font:inherit;font-weight:500;color:var(--text);background:linear-gradient(#26262a,#18181b);
+    border:1px solid var(--line);border-radius:999px;padding:10px 14px;font-size:14px;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+  button:active{transform:scale(.96);background:#2e2e33}
+  button.primary{background:linear-gradient(#ffffff,#d9d9de);color:#0b0b0c;border-color:#fff;font-weight:700}
+  button.on{background:linear-gradient(#ffb547,#ff9800);color:#111;border-color:var(--drag);font-weight:700}
+  #connect svg.lucide{width:18px;height:18px}
+
+  /* トラックパッド */
+  #pad{flex:1;min-height:150px;margin-top:10px;border-radius:24px;position:relative;touch-action:none;overflow:hidden;
+    background:radial-gradient(120% 80% at 50% 0%,#1d1d21 0%,#111113 60%);
+    border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+  #pad.active{border-color:#4a4a52}
+  .pad-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:#26262b}
+  .pad-mark svg.lucide{width:64px;height:64px;stroke-width:1.5}
+  .guide{position:absolute;left:10px;right:50px;bottom:10px;display:grid;grid-template-columns:1fr 1fr;
+    gap:6px 10px;pointer-events:none}
+  .guide div{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim)}
+  .guide b{font-weight:700;color:#7a7a82}
+  .guide svg.lucide{width:15px;height:15px;color:#6a6a72}
+
+  /* セクション */
+  .label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--sub);
+    margin:12px 4px 6px;letter-spacing:.04em}
+  .label svg.lucide{width:15px;height:15px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .grid + .grid{margin-top:8px}
+  .key{flex-direction:column;gap:3px;border-radius:18px;padding:9px 4px 7px;font-size:12px}
+  .key svg.lucide{width:22px;height:22px}
+
+  .text{display:flex;gap:8px;align-items:stretch}
+  header + .help + .label, header + .label{margin-top:2px}
+  textarea{flex:1;resize:none;height:48px;border-radius:16px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);font:inherit;font-size:16px;padding:12px 14px;
+    -webkit-user-select:text;user-select:text}
+  textarea::placeholder{color:var(--dim)}
+  .text button{border-radius:16px;padding:0 16px}
+  .row{display:flex;gap:8px;margin-top:8px}
+  .row > button{flex:1;border-radius:16px;padding:11px 6px}
+
+  details{margin-top:8px;color:var(--sub);font-size:13px}
+  summary{display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 4px;font-weight:500;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary svg.lucide{width:16px;height:16px}
+  label.slider{display:flex;align-items:center;gap:10px;margin:8px 4px}
+  label.slider span:first-child{width:5.5em}
+  label.slider input{flex:1;accent-color:#fff}
+  label.slider span:last-child{width:2.4em;text-align:right;color:var(--text)}
+
+  .help{display:none;gap:10px;margin:0 0 10px;padding:12px 14px;border-radius:14px;background:#2a1a1a;
+    border:1px solid #5b2b2b;font-size:13px;line-height:1.7;color:#f3d6d6}
+  .help.show{display:flex}
+  .help svg.lucide{color:var(--ng);width:20px;height:20px;margin-top:2px}
+  /* よく使うボタン：単色グラデーション */
+  button.c{color:#fff;font-weight:700;border-color:transparent;text-shadow:0 1px 1px rgba(0,0,0,.25);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 14px -6px var(--c2)}
+  button.c:active{filter:brightness(1.18)}
+  .c-blue  {--h:262}
+  .c-green {--h:158}
+  .c-violet{--h:300}
+  .c-cyan  {--h:215}
+  .c-rose  {--h:15}
+  .c-amber {--h:75}
+  /* 明るさ・彩度をそろえて色相だけ変える（OKLCH） */
+  button.c{--c1:oklch(.70 .15 var(--h));--c2:oklch(.46 .13 var(--h));
+    background:linear-gradient(160deg,var(--c1),var(--c2))}
+  .c-amber{--c1:oklch(.74 .15 75)!important;--c2:oklch(.50 .12 60)!important}
+
+  /* 未接続のときは操作系を薄く */
+  body.offline .needs{opacity:.42;filter:saturate(.4)}
+  body.offline #pad .pad-mark{color:#1d1d21}
+
+  /* トースト */
+  #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translate(-50%,20px);
+    background:#f2f2f3;color:#0b0b0c;font-weight:700;font-size:13px;padding:10px 16px;border-radius:999px;
+    opacity:0;pointer-events:none;transition:.2s;white-space:nowrap;z-index:9}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* 指の位置 */
+  .touch{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,255,255,.18),rgba(255,255,255,0) 70%);border:1px solid rgba(255,255,255,.18)}
+
+  /* 右端のスクロール帯 */
+  .strip{position:absolute;top:12px;bottom:12px;right:8px;width:34px;border-radius:999px;
+    background:rgba(255,255,255,.035);border:1px dashed #2c2c31;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:8px;color:#4a4a52;pointer-events:none;font-size:10.5px}
+  .strip span{writing-mode:vertical-rl;letter-spacing:.25em}
+  .strip svg.lucide{width:16px;height:16px}
+  #pad.scrolling .strip{background:rgba(255,255,255,.09);color:#9a9aa2;border-color:#55555c}
+
+  /* チップ型トグル */
+  .chip{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;
+    border:1px solid var(--line);font-size:11.5px;font-weight:500;color:var(--sub);background:var(--panel)}
+  .chip svg.lucide{width:13px;height:13px}
+  .chip.on{background:#f2f2f3;color:#0b0b0c;border-color:#f2f2f3;font-weight:700}
+  .chip:active{transform:scale(.95)}
+
+  /* ドラッグ中はモノトーンの反転で示す（Enterのオレンジと被らない） */
+  button.on{background:#f2f2f3!important;color:#0b0b0c!important;border-color:#fff!important;
+    box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+  #pad.dragging{border:1.5px dashed #f2f2f3}
+  button.c{border-radius:18px}
+  button.key{min-height:62px}
+</style>
+</head>
+<body class="offline">
+<header>
+  <h1>PadRemote</h1>
+  <div class="status"><div id="dot" class="dot"></div><span id="statusText">未接続</span></div>
+  <button id="connect" class="primary"><svg aria-hidden="true" class="lucide lucide-bluetooth" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m7 7 10 10-5 5V2l5 5L7 17" /></svg><span id="connectLabel">接続</span></button>
+</header>
+
+<div id="help" class="help"><svg aria-hidden="true" class="lucide lucide-triangle-alert" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg><div id="helpText"></div></div>
+
+
+<div class="label"><svg aria-hidden="true" class="lucide lucide-keyboard" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M10 8h.01" /><path d="M12 12h.01" /><path d="M14 8h.01" /><path d="M16 12h.01" /><path d="M18 8h.01" /><path d="M6 8h.01" /><path d="M7 16h10" /><path d="M8 12h.01" /><rect width="20" height="16" x="2" y="4" rx="2" /></svg>文字入力<button id="autoEnter" class="chip" type="button"><svg aria-hidden="true" class="lucide lucide-corner-down-left" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 4v7a4 4 0 0 1-4 4H4" /><path d="m9 10-5 5 5 5" /></svg>送信後にEnter</button></div>
+<div class="text needs">
+  <textarea id="txt" placeholder="入力欄をクリック → ここに入力" enterkeyhint="send"></textarea>
+  <button id="sendText" class="c c-cyan" aria-label="送信"><svg aria-hidden="true" class="lucide lucide-send-horizontal" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" /><path d="M6 12h16" /></svg>送信</button>
+</div>
+<div class="row needs">
+  <button id="bs" class="c c-rose"><svg aria-hidden="true" class="lucide lucide-delete" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M10 5a2 2 0 0 0-1.344.519l-6.328 5.74a1 1 0 0 0 0 1.481l6.328 5.741A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" /><path d="m12 9 6 6" /><path d="m18 9-6 6" /></svg>1文字削除</button>
+  <button id="enter" class="c c-amber"><svg aria-hidden="true" class="lucide lucide-corner-down-left" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 4v7a4 4 0 0 1-4 4H4" /><path d="m9 10-5 5 5 5" /></svg>Enter</button>
+</div>
+
+<div class="label"><svg aria-hidden="true" class="lucide lucide-tablet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="16" height="20" x="4" y="2" rx="2" ry="2" /><line x1="12" x2="12.01" y1="18" y2="18" /></svg><span id="opsLabel">タブレット操作</span></div>
+<div class="grid needs">
+  <button class="key c c-blue" data-g="1"><svg aria-hidden="true" class="lucide lucide-undo-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></svg>戻る</button>
+  <button class="key c c-green" data-g="2"><svg aria-hidden="true" class="lucide lucide-house" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>ホーム</button>
+  <button class="key c c-violet" data-g="3"><svg aria-hidden="true" class="lucide lucide-square-stack" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2" /><path d="M10 16c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2" /><rect width="8" height="8" x="14" y="14" rx="2" /></svg>履歴</button>
+  <button class="key" data-g="4"><svg aria-hidden="true" class="lucide lucide-bell" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>通知</button>
+</div>
+<div class="grid needs">
+  <button class="key" id="drag"><svg aria-hidden="true" class="lucide lucide-hand-grab" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M18 11.5V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1.4" /><path d="M14 10V8a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /><path d="M10 9.9V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v5" /><path d="M6 14a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8 2 2 0 1 1 4 0" /></svg><span id="dragLabel">ドラッグ</span></button>
+  <button class="key" id="center"><svg aria-hidden="true" class="lucide lucide-crosshair" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="12" cy="12" r="10" /><line x1="22" x2="18" y1="12" y2="12" /><line x1="6" x2="2" y1="12" y2="12" /><line x1="12" x2="12" y1="6" y2="2" /><line x1="12" x2="12" y1="22" y2="18" /></svg>中央へ</button>
+  <button class="key" data-g="5"><svg aria-hidden="true" class="lucide lucide-settings-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 17H5" /><path d="M19 7h-9" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>クイック設定</button>
+  <button class="key" data-g="8"><svg aria-hidden="true" class="lucide lucide-lock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>ロック</button>
+</div>
+
+<details>
+  <summary><svg aria-hidden="true" class="lucide lucide-sliders-horizontal" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" /></svg>感度の設定</summary>
+  <label class="slider"><span>カーソル</span><input id="sens" type="range" min="0.5" max="6" step="0.1"><span id="sensV"></span></label>
+  <label class="slider"><span>加速</span><input id="accel" type="range" min="0" max="3" step="0.1"><span id="accelV"></span></label>
+  <label class="slider"><span>スクロール</span><input id="ssens" type="range" min="0.5" max="6" step="0.1"><span id="ssensV"></span></label>
+</details>
+
+<div id="pad" class="needs">
+  <div class="pad-mark"><svg aria-hidden="true" class="lucide lucide-mouse-pointer-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z" /></svg></div>
+  <div class="strip"><svg aria-hidden="true" class="lucide lucide-chevrons-up-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" /></svg><span>スクロール</span><svg aria-hidden="true" class="lucide lucide-chevrons-up-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" /></svg></div>
+  <div class="guide">
+    <div><svg aria-hidden="true" class="lucide lucide-move" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20" /><path d="m15 19-3 3-3-3" /><path d="m19 9 3 3-3 3" /><path d="M2 12h20" /><path d="m5 9-3 3 3 3" /><path d="m9 5 3-3 3 3" /></svg><span><b>1本指</b> カーソル移動</span></div>
+    <div><svg aria-hidden="true" class="lucide lucide-pointer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M22 14a8 8 0 0 1-8 8" /><path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /><path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1" /><path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10" /><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg><span><b>タップ</b> クリック</span></div>
+    <div><svg aria-hidden="true" class="lucide lucide-hand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg><span id="longGuide"><b>長押し・2本指タップ</b></span></div>
+    <div><svg aria-hidden="true" class="lucide lucide-arrow-down-up" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m3 16 4 4 4-4" /><path d="M7 20V4" /><path d="m21 8-4-4-4 4" /><path d="M17 4v16" /></svg><span><b>2本指</b> スクロール</span></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const SERVICE = '7a1c0001-5d2b-4c6e-9f0a-3b8e2d4c6a10';
+const COMMAND = '7a1c0002-5d2b-4c6e-9f0a-3b8e2d4c6a10';
+const INFO = '7a1c0003-5d2b-4c6e-9f0a-3b8e2d4c6a10';
+
+// ---------- 接続先ごとのボタン表示 ----------
+const ICONS = {"undo-2": "<svg aria-hidden=\"true\" class=\"lucide lucide-undo-2\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M9 14 4 9l5-5\" /><path d=\"M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11\" /></svg>", "house": "<svg aria-hidden=\"true\" class=\"lucide lucide-house\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" /><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" /></svg>", "square-stack": "<svg aria-hidden=\"true\" class=\"lucide lucide-square-stack\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2\" /><path d=\"M10 16c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2\" /><rect width=\"8\" height=\"8\" x=\"14\" y=\"14\" rx=\"2\" /></svg>", "bell": "<svg aria-hidden=\"true\" class=\"lucide lucide-bell\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M10.268 21a2 2 0 0 0 3.464 0\" /><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\" /></svg>", "settings-2": "<svg aria-hidden=\"true\" class=\"lucide lucide-settings-2\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M14 17H5\" /><path d=\"M19 7h-9\" /><circle cx=\"17\" cy=\"17\" r=\"3\" /><circle cx=\"7\" cy=\"7\" r=\"3\" /></svg>", "lock": "<svg aria-hidden=\"true\" class=\"lucide lucide-lock\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\" /><path d=\"M7 11V7a5 5 0 0 1 10 0v4\" /></svg>", "monitor": "<svg aria-hidden=\"true\" class=\"lucide lucide-monitor\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><rect width=\"20\" height=\"14\" x=\"2\" y=\"3\" rx=\"2\" /><line x1=\"8\" x2=\"16\" y1=\"21\" y2=\"21\" /><line x1=\"12\" x2=\"12\" y1=\"17\" y2=\"21\" /></svg>", "layout-grid": "<svg aria-hidden=\"true\" class=\"lucide lucide-layout-grid\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\" /><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\" /><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\" /><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\" /></svg>", "search": "<svg aria-hidden=\"true\" class=\"lucide lucide-search\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg>", "arrow-right-left": "<svg aria-hidden=\"true\" class=\"lucide lucide-arrow-right-left\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m16 3 4 4-4 4\" /><path d=\"M20 7H4\" /><path d=\"m8 21-4-4 4-4\" /><path d=\"M4 17h16\" /></svg>"};
+const LAYOUT = {
+  android: {1:['undo-2','戻る'], 2:['house','ホーム'], 3:['square-stack','履歴'], 4:['bell','通知'], 5:['settings-2','クイック設定'], 8:['lock','ロック']},
+  mac:     {1:['undo-2','戻る'], 2:['monitor','デスクトップ'], 3:['layout-grid','一覧'], 4:['search','検索'], 5:['arrow-right-left','アプリ切替'], 8:['lock','ロック']},
+};
+let target = 'android';
+function applyTarget(t) {
+  target = LAYOUT[t] ? t : 'android';
+  document.body.dataset.target = target;
+  document.querySelectorAll('[data-g]').forEach(b => {
+    const [ic, label] = LAYOUT[target][b.dataset.g];
+    b.innerHTML = ICONS[ic] + label;
+  });
+  document.getElementById('longGuide').innerHTML =
+    target === 'mac' ? '<b>長押し</b> 右クリック' : '<b>長押し・2本指タップ</b>';
+  document.getElementById('opsLabel').textContent = target === 'mac' ? 'Mac操作' : 'タブレット操作';
+}
+// スクロールを送る間隔（Macは本物のスクロールなので細かく送ると滑らか）
+const scrollMs = () => target === 'mac' ? 35 : 220;
+const stripMs = () => target === 'mac' ? 35 : 150;
+const OP = {MOVE:1, TAP:2, LONG:3, SCROLL:4, GLOBAL:5, TEXT:6, COMMIT:7, BS:8, ENTER:9, DRAG_START:10, DRAG_END:11, CENTER:12};
+
+const $ = id => document.getElementById(id);
+
+// ---------- 設定 ----------
+const settings = {sens:2.2, accel:1.2, ssens:2.5};
+try { Object.assign(settings, JSON.parse(localStorage.getItem('padremote') || '{}')); } catch (e) {}
+for (const k of Object.keys(settings)) {
+  const el = $(k), v = $(k + 'V');
+  el.value = settings[k]; v.textContent = (+settings[k]).toFixed(1);
+  el.addEventListener('input', () => {
+    settings[k] = +el.value; v.textContent = settings[k].toFixed(1);
+    try { localStorage.setItem('padremote', JSON.stringify(settings)); } catch (e) {}
+  });
+}
+
+// ---------- 状態表示 ----------
+function setStatus(text, kind) {
+  $('statusText').textContent = text;
+  $('dot').className = 'dot' + (kind ? ' ' + kind : '');
+}
+function showHelp(html) { $('helpText').innerHTML = html; $('help').classList.add('show'); }
+// 触覚フィードバック（Android: vibrate / iPhone: switch要素のハプティクスを利用）
+const hapticSwitch = (() => {
+  if (navigator.vibrate) return null;
+  const l = document.createElement('label'), i = document.createElement('input');
+  i.type = 'checkbox'; i.setAttribute('switch', '');
+  l.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none';
+  l.appendChild(i); document.body.appendChild(l);
+  return l;
+})();
+function buzz(ms = 12) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); else if (hapticSwitch) hapticSwitch.click(); } catch (e) {}
+}
+let toastTimer = null, lastToast = 0;
+function toast(msg) {
+  const now = Date.now(); if (now - lastToast < 1500) return; lastToast = now;
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+function setOnline(on) { document.body.classList.toggle('offline', !on); }
+const needConn = () => toast('先に右上の「接続」を押してください');
+
+// ---------- BLE送信（順番を守り、移動はまとめて送る） ----------
+let device = null, ch = null, busy = false, queue = [], mvx = 0, mvy = 0, retry = 0;
+
+const clamp16 = v => Math.max(-32767, Math.min(32767, Math.trunc(v)));
+function pkt16(op, a, b) {
+  const buf = new ArrayBuffer(5), v = new DataView(buf);
+  v.setUint8(0, op); v.setInt16(1, clamp16(a), true); v.setInt16(3, clamp16(b), true);
+  return new Uint8Array(buf);
+}
+function takeMove() {
+  const x = clamp16(mvx), y = clamp16(mvy);
+  if (!x && !y) return null;
+  mvx -= x; mvy -= y;
+  return {data: pkt16(OP.MOVE, x, y), reliable: false};
+}
+function send(bytes) {
+  if (!ch) { needConn(); return; }
+  let m; while ((m = takeMove())) queue.push(m); // 先に溜まった移動を送る
+  queue.push({data: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), reliable: true});
+  pump();
+}
+function move(dx, dy) {
+  if (!ch) { needConn(); return; }
+  mvx += dx; mvy += dy;
+  pump();
+}
+async function write(item) {
+  const fast = !item.reliable && ch.properties.writeWithoutResponse && ch.writeValueWithoutResponse;
+  if (fast) return ch.writeValueWithoutResponse(item.data);
+  if (ch.writeValueWithResponse) return ch.writeValueWithResponse(item.data);
+  return ch.writeValue(item.data);
+}
+async function pump() {
+  if (busy || !ch) return;
+  const item = queue.shift() || takeMove();
+  if (!item) return;
+  busy = true;
+  try { await write(item); } catch (e) { console.warn('write failed', e); }
+  busy = false;
+  pump();
+}
+
+// ---------- 接続 ----------
+async function connect() {
+  if (!navigator.bluetooth) {
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    showHelp(ios
+      ? 'iPhoneのSafariは標準ではWeb Bluetoothに対応していません。<br>App Storeの「WebBLE（ioswebble）」を入れてSafari拡張を有効にし、Safariでこのページを開いてください。<br>（ホーム画面から開いて動かない場合はSafariのタブで使ってください）'
+      : 'このブラウザはWeb Bluetoothに対応していません。AndroidならChromeで開いてください。');
+    return;
+  }
+  try {
+    device = await navigator.bluetooth.requestDevice({filters: [{services: [SERVICE]}]});
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    retry = 0;
+    await gattConnect();
+  } catch (e) {
+    setStatus('未接続：' + (e && e.message ? e.message : e), '');
+  }
+}
+async function gattConnect() {
+  setStatus('接続中…', 'wait');
+  const server = await device.gatt.connect();
+  const svc = await server.getPrimaryService(SERVICE);
+  ch = await svc.getCharacteristic(COMMAND);
+  let kind = 'android';
+  try {
+    const info = await svc.getCharacteristic(INFO);
+    kind = new TextDecoder().decode(await info.readValue()).trim();
+  } catch (e) { /* 古い受信アプリは android 扱い */ }
+  applyTarget(kind);
+  queue = []; busy = false; mvx = mvy = 0; retry = 0;
+  setStatus((device.name || '接続済み') + (target === 'mac' ? '（Mac）' : ''), 'ok');
+  $('connectLabel').textContent = '再接続';
+  setOnline(true); buzz(20);
+  $('help').classList.remove('show');
+  keepAwake();
+}
+function onDisconnected() {
+  ch = null;
+  setOnline(false);
+  if (retry < 5) {
+    retry++;
+    setStatus('再接続中…(' + retry + ')', 'wait');
+    setTimeout(() => gattConnect().catch(onDisconnected), 800 * retry);
+  } else {
+    setStatus('切断されました', '');
+  }
+}
+$('connect').addEventListener('click', connect);
+
+// 画面を消さない
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); } } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ch) keepAwake(); });
+
+// ---------- トラックパッド ----------
+const pad = $('pad');
+let t = null, longTimer = null;
+
+function avg(touches) {
+  let x = 0, y = 0;
+  for (const p of touches) { x += p.clientX; y += p.clientY; }
+  return {x: x / touches.length, y: y / touches.length};
+}
+const dots = [];
+function drawTouches(touches) {
+  const r = pad.getBoundingClientRect();
+  for (let i = 0; i < touches.length; i++) {
+    if (!dots[i]) { dots[i] = document.createElement('div'); dots[i].className = 'touch'; pad.appendChild(dots[i]); }
+    dots[i].style.display = 'block';
+    dots[i].style.left = (touches[i].clientX - r.left) + 'px';
+    dots[i].style.top = (touches[i].clientY - r.top) + 'px';
+  }
+  for (let i = touches.length; i < dots.length; i++) dots[i].style.display = 'none';
+}
+function inStrip(touch) { return touch.clientX > pad.getBoundingClientRect().right - 50; }
+function flushScroll(now) {
+  if (Math.abs(t.sx) + Math.abs(t.sy) > 2) send(pkt16(OP.SCROLL, t.sx * settings.ssens, t.sy * settings.ssens));
+  t.sx = t.sy = 0; t.lastScroll = now;
+}
+
+pad.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const p = avg(e.touches), now = performance.now();
+  pad.classList.add('active');
+  drawTouches(e.touches);
+  if (!t) {
+    t = {start: now, max: e.touches.length, n: e.touches.length, lx: p.x, ly: p.y, dist: 0, long: false, sx: 0, sy: 0, lastScroll: now,
+         strip: e.touches.length === 1 && inStrip(e.touches[0])};
+    if (t.strip) { pad.classList.add('scrolling'); drawTouches(e.touches); return; }
+    clearTimeout(longTimer);
+    longTimer = setTimeout(() => {
+      if (t && t.max === 1 && t.dist < 10) { t.long = true; send([OP.LONG]); buzz(25); }
+    }, 550);
+  } else {
+    t.max = Math.max(t.max, e.touches.length);
+    t.n = e.touches.length; t.lx = p.x; t.ly = p.y;
+  }
+}, {passive: false});
+
+pad.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!t) return;
+  const p = avg(e.touches), now = performance.now();
+  drawTouches(e.touches);
+  if (t.strip) {
+    t.sy += p.y - t.ly; t.ly = p.y; t.dist += 1;
+    if (now - t.lastScroll > stripMs()) flushScroll(now);
+    return;
+  }
+  if (e.touches.length !== t.n) { t.n = e.touches.length; t.lx = p.x; t.ly = p.y; return; }
+  const dx = p.x - t.lx, dy = p.y - t.ly;
+  t.lx = p.x; t.ly = p.y;
+  t.dist += Math.hypot(dx, dy);
+  if (t.n === 1 && t.max === 1) {
+    const sp = Math.hypot(dx, dy);
+    const f = settings.sens * (1 + Math.min(sp / 10, 1.5) * settings.accel);
+    move(dx * f, dy * f);
+  } else if (t.n >= 2) {
+    t.sx += dx; t.sy += dy;
+    if (now - t.lastScroll > scrollMs()) flushScroll(now);
+  }
+}, {passive: false});
+
+function touchEnd(e) {
+  e.preventDefault();
+  if (!t) return;
+  if (e.touches.length > 0) { drawTouches(e.touches); const p = avg(e.touches); t.n = e.touches.length; t.lx = p.x; t.ly = p.y; return; }
+  clearTimeout(longTimer);
+  drawTouches([]);
+  const now = performance.now(), dur = now - t.start;
+  if (t.strip) {
+    flushScroll(now);
+  } else if (t.max >= 2) {
+    if (t.dist < 14 && dur < 300) { send([OP.LONG]); buzz(25); }
+    else flushScroll(now);
+  } else if (!t.long && t.dist < 10 && dur < 300) {
+    send([OP.TAP]); buzz();
+  }
+  t = null;
+  pad.classList.remove('active', 'scrolling');
+}
+pad.addEventListener('touchend', touchEnd, {passive: false});
+pad.addEventListener('touchcancel', touchEnd, {passive: false});
+
+// ---------- ボタン ----------
+document.querySelectorAll('[data-g]').forEach(b =>
+  b.addEventListener('click', () => { send([OP.GLOBAL, +b.dataset.g]); buzz(); }));
+
+let dragging = false;
+$('drag').addEventListener('click', () => {
+  dragging = !dragging;
+  $('drag').classList.toggle('on', dragging);
+  pad.classList.toggle('dragging', dragging);
+  $('dragLabel').textContent = dragging ? 'ここで離す' : 'ドラッグ';
+  send([dragging ? OP.DRAG_START : OP.DRAG_END]); buzz();
+});
+$('center').addEventListener('click', () => { send([OP.CENTER]); buzz(); });
+
+// ---------- 文字入力 ----------
+function sendText() {
+  const ta = $('txt'), text = ta.value;
+  if (!ch) { needConn(); return; }
+  if (!text) { ta.focus(); return; }
+  const bytes = new TextEncoder().encode(text);
+  for (let i = 0; i < bytes.length; i += 19) {
+    const part = bytes.subarray(i, i + 19), pk = new Uint8Array(part.length + 1);
+    pk[0] = OP.TEXT; pk.set(part, 1);
+    send(pk);
+  }
+  send([OP.COMMIT]);
+  if (autoEnter) send([OP.ENTER]);
+  ta.value = '';
+  buzz();
+}
+let autoEnter = false;
+try { autoEnter = localStorage.getItem('padremote.autoEnter') === '1'; } catch (e) {}
+$('autoEnter').classList.toggle('on', autoEnter);
+$('autoEnter').addEventListener('click', () => {
+  autoEnter = !autoEnter; $('autoEnter').classList.toggle('on', autoEnter); buzz();
+  try { localStorage.setItem('padremote.autoEnter', autoEnter ? '1' : '0'); } catch (e) {}
+});
+$('sendText').addEventListener('click', sendText);
+$('txt').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); sendText(); }
+});
+$('bs').addEventListener('click', () => { send([OP.BS]); buzz(); });
+$('enter').addEventListener('click', () => { send([OP.ENTER]); buzz(); });
+
+// ---------- PWA ----------
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (!navigator.bluetooth) setStatus('このブラウザは未対応', '');
+</script>
+</body>
+</html>
