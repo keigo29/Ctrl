@@ -30,6 +30,20 @@
             </intent-filter>
         </activity>
 
+        <!-- Redmi Pad を Mac の Bluetooth マウス・キーボードにする画面（ホームに別アイコンで出る） -->
+        <activity
+            android:name=".MacControlActivity"
+            android:exported="true"
+            android:label="@string/mac_control"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".RemoteService"
             android:exported="true"

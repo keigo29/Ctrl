@@ -58,6 +58,8 @@ public class MainActivity extends Activity {
         statusView.setPadding(0, 0, 0, (int) (20 * d));
         root.addView(statusView);
 
+        root.addView(button("このタブレットでMacを操作する（Mac操作）", v ->
+                startActivity(new Intent(this, MacControlActivity.class))));
         root.addView(button("① Bluetoothの権限を許可", v -> requestBlePermissions()));
         root.addView(button("② ユーザー補助で「PadRemote」をオン", v ->
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))));

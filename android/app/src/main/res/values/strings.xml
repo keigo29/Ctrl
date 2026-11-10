@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PadRemote</string>
+    <string name="mac_control">Mac操作</string>
     <string name="a11y_desc">スマホのPWAからBluetoothでこのタブレットを操作します（カーソル表示・タップ・スクロール・文字入力・ホーム/戻るボタン）。</string>
 </resources>
